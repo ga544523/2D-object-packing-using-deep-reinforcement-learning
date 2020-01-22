@@ -1,0 +1,925 @@
+import torch
+import torchvision
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torchvision import transforms, utils
+from torch.utils.data import Dataset, DataLoader
+import matplotlib.pyplot as plt
+from PIL import Image
+import numpy as np
+import cv2
+import torchvision.transforms as transforms
+import torch.utils.model_zoo as model_zoo
+import cmath
+import math
+import torchvision.models as models
+from torchvision.utils import save_image, make_grid
+import random
+from numba import jit
+from numba import prange, njit, autojit
+import threading
+print('res LR200')
+device1 = torch.device("cuda:0")
+device2 = torch.device("cuda:1")
+device3 = torch.device("cuda:2")
+device4 = torch.device("cuda:3")
+
+
+def convert2tensor(x):
+    x = torch.FloatTensor(x)
+    return x
+
+
+img_path = "black.png"
+img_path2 = "white.png"
+
+
+
+onlyonenow = np.array(
+    [-15, -15, 0, 15, 20, -20, 0, -25
+     ],
+    np.float32)
+featureshape = 0
+
+
+def cross(p1, p2, p0):
+    return ((p1[0] - p0[0]) * (p2[1] - p0[1])) - ((p2[0] - p0[0]) * (p1[1] - p0[1]))
+
+
+__all__ = ['alexnet']
+
+devicecpu = torch.device("cpu")
+print(torch.cuda.is_available())
+print(torch.__version__)
+
+
+def default_loader(path):
+    return Image.open(path).convert('L')
+
+
+import torch
+import torch.nn as nn
+
+
+class VGG(nn.Module):
+
+    def __init__(self, features, num_classes=3, init_weights=True):
+        super(VGG, self).__init__()
+        self.features = features.to(device4)
+
+        self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
+        self.classifier = nn.Sequential(
+            nn.Linear(512 * 7 * 7, 4096),
+            nn.ReLU(True),
+
+            nn.Linear(4096, 4096),
+            nn.ReLU(True),
+
+            nn.Linear(4096, num_classes),
+        ).to(device3)
+        if init_weights:
+            self._initialize_weights()
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.avgpool(x)
+        x = x.view(x.size(0), -1)
+        x = x.to(device3)
+
+        x = self.classifier(x)
+        return x
+
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.constant_(m.bias, 0)
+
+
+def make_layers(cfg, batch_norm=False):
+    layers = []
+    in_channels = 2
+    for v in cfg:
+        if v == 'M':
+            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+        else:
+            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
+            if batch_norm:
+                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+            else:
+                layers += [conv2d, nn.ReLU(inplace=True)]
+            in_channels = v
+    return nn.Sequential(*layers)
+
+
+cfgs = {
+    'A': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
+    'B': [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
+    'D': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
+    'E': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'],
+}
+
+
+def _vgg(arch, cfg, batch_norm, pretrained, progress, **kwargs):
+    if pretrained:
+        kwargs['init_weights'] = False
+    model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
+
+    return model
+
+
+def vgg11(pretrained=False, progress=True, **kwargs):
+    """VGG 11-layer model (configuration "A")
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    return _vgg('vgg11', 'A', False, pretrained, progress, **kwargs)
+
+
+# 80 256
+# 200 6400
+# 400 30976
+# 300 16384
+W =200
+seperate=6400
+
+class AlexNet(nn.Module):
+
+    def __init__(self, num_classes=200 * 200):
+        super(AlexNet, self).__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(2, 64, kernel_size=11, stride=4, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(64, 192, kernel_size=5, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(192, 384, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(384, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+        ).to(device3)
+
+        self.classifier = nn.Sequential(
+
+            nn.Linear(seperate, 2048),
+            nn.ReLU(inplace=True),
+            nn.Linear(2048, 4096),
+            nn.ReLU(inplace=True),
+        ).to(device4)
+        self.classifier2 = nn.Sequential(
+            nn.Linear(seperate, 2048),
+            nn.ReLU(inplace=True),
+            nn.Linear(2048, 4096),
+            nn.ReLU(inplace=True),
+        ).to(device2)
+
+        self.classifier3 = nn.Sequential(
+            nn.Linear(4096, 3),
+        ).to(device1)
+    def forward(self, x):
+        x = self.features(x)
+        x = x.to(device4)
+        x1 = x.view(x.size(0), seperate)
+        x=x.to(device2)
+        x2 = x.view(x.size(0), seperate)
+        y=self.classifier2(x2)
+        y=y.to(device4)
+        x = self.classifier(x1)
+        out=x+y
+        out=out.to(device1)
+        out=self.classifier3(out)
+        out=out.to(device4)
+        return out
+
+
+def alexnet(pretrained=False, **kwargs):
+    r"""AlexNet model architecture from the
+    `"One weird trick..." <https://arxiv.org/abs/1404.5997>`_ paper.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = AlexNet(**kwargs)
+    return model
+
+
+device = torch.device("cuda:1")
+net222 = alexnet()
+
+# transforms.ToTensor()
+transform1 = transforms.Compose([
+    transforms.ToTensor(),  # range [0, 255] -> [0.0,1.0]
+]
+)
+
+overlapnum = []
+
+allsinglepoly = []
+
+
+@jit(nogil=True, parallel=True)
+def checkoverlap(imgoverlap, x, y, rotation, now, first, nowshape):
+    no = 0
+    if (first):
+        return 0
+
+    for i in prange(0, len(now), 1):
+        xx = int(now[i][0])
+        yy = int(now[i][1])
+        if (xx >= W or xx < 0 or yy >= W or yy < 0 or imgoverlap[yy, xx] == 255):
+            return 1
+
+    k = int(rotation)
+    for i in prange(0, len(overlapnum[nowshape][k]), 1):
+        newi = int(y - int(W / 2) + overlapnum[nowshape][k][i][0])
+        newj = int(x - int(W / 2) + overlapnum[nowshape][k][i][1])
+        if imgoverlap[newi][newj] == 255:
+            return 1
+
+    return 0
+
+@jit(nogil=True, parallel=True)
+def drawimg(imgdraw, x, y, rotation, now):
+
+    now = np.array(now)
+
+    tmpimgdraw = imgdraw.copy()
+    mask = np.zeros((W + 2, W + 2), np.uint8)
+    cv2.polylines(tmpimgdraw, [now], True, (255, 255, 255), thickness=1)
+    cv2.floodFill(tmpimgdraw, mask, (int(x), int(y)), (255, 255, 255), (0,), (0,), 4)  # 填充封??域
+    return tmpimgdraw
+
+
+imgs = np.zeros((W, W, 1), np.uint8)
+
+
+overallimg = 0
+overalllabels = 0
+tttttttttt = 0
+yyyyyyyyyy = 0
+
+
+def collect(arr, nowshape):
+    global featureshape
+    global overallimg
+    global overalllabels
+    global tttttttttt
+    global yyyyyyyyyy
+    i = 0
+    currentimg = imgs
+    k = len(arr)
+
+    while (i < k):
+        # get the inputs
+
+        inputs = torch.from_numpy(currentimg)  # ?一化到 [0.0,1.0]
+        inputs = inputs.view(1, 1, W, W)
+
+        labelx = arr[i][0]
+        labely = arr[i][1]
+        labelr = arr[i][2]
+
+        if (tttttttttt == 0):
+            overallimg = inputs
+            tttttttttt = 1
+        else:
+            overallimg = torch.cat((overallimg, inputs), 0)
+
+        now = allsinglepoly[nowshape][labelx][labely][labelr]
+        currentimg = drawimg(currentimg, labelx, labely, labelr, now)
+
+        labels = convert2tensor(arr[i])
+        labels = labels.view(1, -1)
+
+        if (yyyyyyyyyy == 0):
+            overalllabels = labels
+            yyyyyyyyyy = 1
+        else:
+            overalllabels = torch.cat((overalllabels, labels), 0)
+        i = i + 1
+
+        overallimg = torch.cat((overallimg, featureshape), 0)
+
+
+def retrain():
+    criterion = nn.MSELoss()
+    global net222
+    optimizer = optim.Adam(net222.parameters(), lr=0.001, betas=(0.9, 0.999))
+
+    global overallimg
+    global overalllabels
+    overallimg = overallimg.view(-1, 2, W, W)
+    overallimg = overallimg.float()
+    overallimg, overalllabels = overallimg.to(device3), overalllabels.to(device4)
+    print(overallimg.size())
+    for epoch in prange(1000):  # loop over the dataset multiple times
+        optimizer.zero_grad()
+        # forward + backward + optimize
+        outputs = net222(overallimg)
+        loss = criterion(outputs, overalllabels)
+
+        loss.backward()
+        optimizer.step()
+
+
+class Point():
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+@jit(nogil=True, parallel=True)
+def GetAreaOfPolyGon(points):
+    area = 0
+    p1 = points[0]
+    for i in prange(1, len(points) - 1):
+        p2 = points[i]
+        p3 = points[i + 1]
+        vecp1p2 = Point(p2[0] - p1[0], p2[1] - p1[1])
+        vecp2p3 = Point(p3[0] - p2[0], p3[1] - p2[1])
+        vecMult = vecp1p2.x * vecp2p3.y - vecp1p2.y * vecp2p3.x
+        sign = 0
+        if (vecMult > 0):
+            sign = 1
+        elif (vecMult < 0):
+            sign = -1
+        triArea = GetAreaOfTriangle(p1, p2, p3) * sign
+        area += triArea
+    return abs(area)
+
+@jit(nogil=True, parallel=True)
+def GetAreaOfTriangle(p1, p2, p3):
+    area = 0
+    p1p2 = GetLineLength(p1, p2)
+    p2p3 = GetLineLength(p2, p3)
+    p3p1 = GetLineLength(p3, p1)
+    s = (p1p2 + p2p3 + p3p1) / 2
+    area = s * (s - p1p2) * (s - p2p3) * (s - p3p1)
+    area = math.sqrt(area)
+    return area
+
+
+@jit(nogil=True, parallel=True)
+def GetLineLength(p1, p2):
+    length = math.pow((p1[0] - p2[0]), 2) + math.pow((p1[1] - p2[1]), 2)
+    length = math.sqrt(length)
+    return length
+
+number = 1
+
+maxcnt = 0
+needtime = 10000000000
+lim = 4000000
+countmax = 0
+
+okk = 0
+
+countcnt = 0
+maxlist = []
+
+
+def savenotglobal(res):
+    global maxlist
+    global countmax
+    maxlist = list(res)
+    countmax = len(res)
+
+
+def getglobal():
+    global countmax
+    return countmax
+
+
+def getglobaltest(imgsearch):
+    return test(imgsearch)
+
+
+@njit(nogil=True, parallel=True)
+def rotate(x, y, rotation, onlyonenow):
+    newobjectlist = []
+    index = 0
+    n = len(onlyonenow)
+    if (rotation >= 180):
+        rotation -= 360;
+
+    if (rotation < -180):
+        rotation += 360;
+
+    while (index < n):
+        R = math.sqrt(onlyonenow[index][0] * onlyonenow[index][0] + onlyonenow[index][1] * onlyonenow[index][1])
+        rot = math.atan2(onlyonenow[index][1], onlyonenow[index][0]) - (rotation / 180 * 3.1415926)
+
+        tx = int(R * math.cos(rot))
+        ty = int(R * math.sin(rot))
+        newobjectlist.append([tx + x, ty + y])
+        index = index + 1
+    return newobjectlist
+
+
+ggg = 0
+
+nextgroup = [[], [[0, 0, 0]], [[0, 0, 0]], [[0, 0, 0]], [[0, 0, 0]],[[0, 0, 0]] ]
+
+
+
+def search(imgsearch, d, deep, nowshape, timeofsearch, minarea, res, lim, currentpoint, grouplist,pointsize):
+
+    if (d == deep or timeofsearch[0][0] >= lim):
+        return
+
+    array = getglobaltest(imgsearch)
+
+    if (timeofsearch[0][0] >= lim):
+        return
+
+    rotation = int(array[2] + 0.5)
+    x = int(array[0] + 0.5)
+    y = int(array[1] + 0.5)
+    rotation = max(rotation, 0)
+    x = max(x, 0)
+    y = max(y, 0)
+
+    x = min(W-1, x)
+    y = min(W-1, y)
+    x%=W
+    y%=W
+    rotation = rotation % 360
+
+
+    tmpres=allsinglepoly[nowshape][x][y][rotation]
+
+    checkimgae = drawimg(imgsearch, x, y, rotation, tmpres)
+
+
+
+
+    countt = 0
+    maxcurrentpoint = []
+    maxres = []
+    nextimg = 0
+    nextconvexhull = []
+    for ii in prange(int(0), int(1000), 1):
+        countt += 1
+        timeofsearch[0][0] = timeofsearch[0][0] + 1
+        oktime = 0
+        if (timeofsearch[0][0] >= lim):
+            return
+        checkimgae=imgsearch
+        nx = (x) % W
+        ny = (y) % W
+        nr = (rotation) % 360
+        if (countt != 1):
+            nx = x + random.randint(int(-W/2), int(W/2))
+            ny = y + random.randint(int(-W/2), int(W/2))
+            if (len(grouplist) == 1):
+                nr = rotation + random.randint(0, 360)
+            if (nr < 0):
+                nr = nr + 360
+
+        for jj in prange(0, len(grouplist), 1):
+            nnx = nx + grouplist[jj][0]
+            nnx %= W
+            nny = ny + grouplist[jj][1]
+            nny %= W
+
+            if (len(grouplist) != 1):
+                nr = grouplist[jj][2] % 360
+            nr %= 360
+            if (nnx > 0 and nny > 0):
+
+                nowres = allsinglepoly[nowshape][nnx][nny][nr]
+
+                no = 1
+
+                if (len(nowres) > 1):
+                    no = checkoverlap(checkimgae, nnx, nny, nr, nowres, 0, nowshape)
+                if (no == 1):
+                    break
+                if (no == 0 and len(nowres) != 0):
+                    checkimgae = drawimg(checkimgae, nnx, nny, nr, nowres)
+
+                    res.append([nnx, nny, nr])
+                    nk = len(nowres)
+                    for j in prange(nk):
+                        currentpoint.append(nowres[j][0])
+                        currentpoint.append(nowres[j][1])
+                    oktime += 1
+
+        if (oktime != len(grouplist)):
+            for rrr in prange(0, oktime, 1):
+                for rr in prange(0, pointsize, 1):
+                    currentpoint.pop()
+                    currentpoint.pop()
+                res.pop()
+
+        if (oktime == len(grouplist)):
+            myarray = np.asarray(currentpoint)
+            myarray = myarray.reshape(-1, 2)
+
+            point = cv2.convexHull(myarray)
+
+            myarray = np.asarray(point)
+            myarray = myarray.reshape(-1, 2)
+
+            area = GetAreaOfPolyGon(myarray)
+
+            if (d == 0):
+                area = res[0][0] + (res[0][1])
+
+            if (len(res) > getglobal()):
+                minarea[0][0] = area
+                maxres = list(res)
+                nextimg = checkimgae.copy()
+                savenotglobal(res)
+                nextconvexhull = myarray.reshape(-1).tolist()
+
+            if (len(res) == getglobal() and area < minarea[0][0]):
+                minarea[0][0] = area
+                maxres = list(res)
+                nextimg = checkimgae.copy()
+                savenotglobal(res)
+                nextconvexhull = myarray.reshape(-1).tolist()
+
+            for rrr in prange(0, len(grouplist), 1):
+                for rr in prange(pointsize):
+                    currentpoint.pop()
+                    currentpoint.pop()
+                res.pop()
+
+    xr=min(W-1, x)
+    xl=0
+    bx=-1
+
+
+    yr=min(W-1,y)
+    yl=0
+    by=-1
+    checkimgae=imgsearch
+    while(xl<=xr):
+        m=int( (xl+xr)/2)
+
+        nowres = allsinglepoly[nowshape][m][y][rotation]
+
+        no = 1
+        if (len(nowres) > 1):
+
+            no = checkoverlap(checkimgae, m, y, rotation, nowres, 0, nowshape)
+
+        if (no == 0 and len(nowres) != 0):
+            bx=m
+            xr=m-1
+        else:
+            xl=m+1
+
+    if(bx!=-1):
+
+
+        while(yl<=yr):
+            m=int( (yl+yr)/2)
+
+            nowres = allsinglepoly[nowshape][bx][m][rotation]
+
+            no = 1
+            if (len(nowres) > 1):
+                no = checkoverlap(checkimgae, bx, m, rotation, nowres, 0, nowshape)
+            if (no == 0 and len(nowres) != 0):
+                by=m
+                yr=m-1
+            else:
+                yl=m+1
+
+    if(by!=-1 and bx!=-1):
+        nowres = allsinglepoly[nowshape][bx][by][rotation]
+
+        oktime=0
+        checkimgae = drawimg(checkimgae, bx, by, rotation, nowres)
+
+
+        res.append([bx, by, rotation])
+        nk = len(nowres)
+
+        for j in range(nk):
+
+            currentpoint.append(nowres[j][0])
+            currentpoint.append(nowres[j][1])
+        oktime += 1
+
+        if (oktime == len(grouplist)):
+
+            myarray = np.asarray(currentpoint)
+
+            myarray = myarray.reshape(-1, 2)
+
+            point = cv2.convexHull(myarray)
+
+            myarray = np.asarray(point)
+            myarray = myarray.reshape(-1, 2)
+
+            area = GetAreaOfPolyGon(myarray)
+
+            if (d== 0):
+                area = res[0][0] + (res[0][1])
+
+            if (len(res) > getglobal()):
+
+                minarea[0][0] = area
+                maxres = list(res)
+                nextimg = checkimgae.copy()
+                savenotglobal(res)
+                nextconvexhull = myarray.reshape(-1).tolist()
+
+            if (len(res) == getglobal() and area < minarea[0][0]):
+
+                minarea[0][0] = area
+                maxres = list(res)
+                nextimg = checkimgae.copy()
+                savenotglobal(res)
+                nextconvexhull = myarray.reshape(-1).tolist()
+            for rrr in range(0, len(grouplist), 1):
+                for rr in range(pointsize):
+                    currentpoint.pop()
+                    currentpoint.pop()
+                res.pop()
+
+    if (len(maxres) != 0):
+
+        search(nextimg, d + 1, deep, nowshape, timeofsearch, minarea, maxres, lim, nextconvexhull, grouplist,pointsize)
+
+@jit(nogil=True, parallel=True)
+def test(imgtest):
+    imgtest = torch.from_numpy(imgtest)
+
+    imgtest = imgtest.view(1, 1, W, W)
+
+    imgtest = torch.cat((imgtest, featureshape), 1)
+
+    imgtest = imgtest.float()
+
+    prediction = net222(imgtest.to(device3))
+
+    tmp = prediction.data
+
+    tmp = tmp.view(-1)
+
+    id = tmp.tolist()
+
+    return id
+
+
+best = 0
+combo = 1
+
+takethepoint=0
+def changeshape(nowshape, nextgroupshape, featurecombo):
+    global onlyonenow
+    global featureshape
+    global takethepoint
+    if (nowshape == 2):
+        onlyonenow = np.array(
+            [-7, 0, -6, 16, -3, 28, 3, 36, 11, 36, 16, 30, 18, 20, 18, 10, 16, -10, 16, -17, 16, -33, 13, -39, 7, -40,
+             0, -36, -2, -31, -4, -12
+             ],
+            np.int32)
+
+    if (nowshape == 1):
+        onlyonenow = np.array(
+            [-7,0, -6,16, -3,28, 3,36, 11,36, 16,30, 18,20, 18,10, 16,-10, 16,-17, 16,-33, 13,-39, 7,-40, 0,-36, -2,-31, -4,-12
+             ],
+            np.int32)
+    if (nowshape == 0):
+
+        onlyonenow = np.array(
+            [-15, -15, 0, 15, 20, -20, 0, -25
+             ],
+            np.int32)
+
+    onlyonenow = onlyonenow.reshape(-1, 2)
+    takethepoint = len(onlyonenow)
+    nextimg = imgs
+
+    for i in prange(0, featurecombo, 1):
+
+        now = rotate(int(W / 2) + nextgroupshape[i][0], int(W / 2) + nextgroupshape[i][1], nextgroupshape[i][2],
+                     onlyonenow)
+        flag = 0
+
+        for j in prange(0, len(now), 1):
+            if (now[j][0] >= W or now[j][0] < 0 or now[j][1] >= W or now[j][1] < 0):
+                flag = 1
+
+        if (flag == 0):
+            nextimg = drawimg(nextimg, int(W / 2) + nextgroupshape[i][0], int(W / 2) + nextgroupshape[i][1],
+                              nextgroupshape[i][2], now)
+
+    featureshape = torch.from_numpy(nextimg)
+    featureshape = featureshape.view(1, -1, W, W)
+
+
+@jit
+def getrotate(overlapnum, nowshape):
+    overlapnum.append([])
+    for i in prange(0, 360, 1):
+        creat = np.zeros((W, W, 1), np.uint8)
+        nowres = rotate(W / 2, W / 2, i, onlyonenow)
+        nowres = np.array(nowres)
+        nowres = nowres.astype(int)
+        cv2.polylines(creat, [nowres], True, (255, 255, 255), thickness=1)
+        mask = np.zeros((W + 2, W + 2), np.uint8)
+        cv2.floodFill(creat, mask, (int(W/2), int(W/2)), (255, 255, 255), (0,), (0,), 4)  # 填充封??域
+        overlapnum[nowshape].append([])
+        for j in prange(0, W, 1):
+            for k in prange(0, W, 1):
+                if creat[j][k] == 255:
+                    overlapnum[nowshape][i].append([j, k])
+
+@jit(nogil=True, parallel=True)
+def getemptylis(nowshape):
+    global allsinglepoly
+    allsinglepoly.append([])
+    for i in prange(0, W, 1):
+        allsinglepoly[nowshape].append([])
+        for j in prange(0, W, 1):
+            allsinglepoly[nowshape][i].append([])
+            for k in prange(0, 360, 1):
+                allsinglepoly[nowshape][i][j].append([-1])
+
+
+@jit(nogil=True, parallel=True)
+def getsingle(allsinglepoly, nowshape):
+    for i in prange(0, W, 1):
+
+        for j in prange(0, W, 1):
+
+            for k in prange(0, 360, 1):
+
+                nowres = rotate(i, j, k, onlyonenow)
+
+                no = checkoverlap(imgs, i, j, k, nowres, 1, nowshape)
+                if (no == 0):
+                    allsinglepoly[nowshape][i][j][k] = nowres
+
+
+def searchgroupglobal(res, i):
+    global nextgroup
+    nextgroup[i] = list(res)
+
+
+@jit(nogil=True, parallel=True)
+def searchgroup(depth, combo, nowshape, maxlist1, currentpoint, vis, nex, minarea, res):
+    if (depth == combo):
+
+        myarray = np.asarray(currentpoint)
+        myarray = myarray.reshape(-1, 2)
+
+        point = cv2.convexHull(myarray)
+
+        myarray = np.asarray(point)
+        myarray = myarray.reshape(-1, 2)
+
+        area = GetAreaOfPolyGon(myarray)
+        if (area < minarea[0][0]):
+            searchgroupglobal(res, combo)
+            minarea[0][0] = area
+        return
+
+    for i in prange(nex, len(maxlist1), 1):
+        if (vis[i] == 0):
+            vis[i] = 1
+            res.append([maxlist1[i][0], maxlist1[i][1], maxlist1[i][2]])
+            nowres = allsinglepoly[nowshape][maxlist1[i][0]][maxlist1[i][1]][maxlist1[i][2]]
+            for j in prange(0, len(nowres), 1):
+                currentpoint.append(nowres[j][0])
+                currentpoint.append(nowres[j][1])
+
+            searchgroup(depth + 1, combo, nowshape, maxlist1, currentpoint, vis, i + 1, minarea, res)
+            vis[i] = 0;
+            for j in prange(len(nowres)):
+                currentpoint.pop()
+                currentpoint.pop()
+            res.pop()
+
+
+maxlistforgroup = 0
+getinit = 0
+#net222=torch.load('net 300 reg shoe LB.pkl')
+
+while (ggg < 1000000):
+
+    x = []
+    flag = 0
+    cnt = 0
+    tttttttttt = 0
+    yyyyyyyyyy = 0
+    maxlist = []
+    nowshape = 0
+    while (cnt < 1):
+
+        if (getinit == 0):
+            getinit = 1
+            for i in prange(0, 1, 1):
+                changeshape(i, nextgroup[1], 1)
+                print(takethepoint)
+                getrotate(overlapnum, i)
+                getemptylis(i)
+                getsingle(allsinglepoly, i)
+
+        searchshow = imgs
+        objectsum = 0
+
+        minarea = 1000000
+        maxlist = []
+        currentpoint = []
+        result = []
+        pre=0
+        currentpoint = []
+        result = []
+
+        for tir in prange(0,3,1):
+            for i in prange(1, 0, -1):
+
+                if (len(nextgroup[i]) == i):
+                    changeshape(nowshape, nextgroup[i], i)
+
+                    search(searchshow, pre, 999999, nowshape, [[0]], [[minarea]], result, lim, currentpoint, nextgroup[i],takethepoint)
+
+                    n = len(maxlist)
+                    objectsum = n
+                    if (n != 0):
+                        print('maxlist=', maxlist)
+
+                    for j in prange(pre, n, 1):
+                        now = allsinglepoly[nowshape][maxlist[j][0]][maxlist[j][1]][maxlist[j][2]]
+                        searchshow = drawimg(searchshow, maxlist[j][0], maxlist[j][1], maxlist[j][2], now)
+                        result.append([maxlist[j][0], maxlist[j][1], maxlist[j][2]])
+
+                        nk = len(now)
+                        for j in prange(nk):
+                            currentpoint.append(now[j][0])
+                            currentpoint.append(now[j][1])
+                        if(n!=0):
+                            myarray = np.asarray(currentpoint)
+                            myarray = myarray.reshape(-1, 2)
+
+                            point = cv2.convexHull(myarray)
+
+                            myarray = np.asarray(point)
+                            myarray = myarray.reshape(-1, 2)
+
+                            minarea = GetAreaOfPolyGon(myarray)
+                    pre=n
+
+        collect(maxlist, nowshape)
+
+        String = '/home/YuChengChu/reg1/'
+        String += str(number)
+        String += ' '
+        String += str(objectsum)
+        number = number + 1
+        String += '.png'
+
+        cv2.imwrite(String, searchshow)
+        if (objectsum > countcnt):
+            beststring = '/home/YuChengChu/reg1/best '
+            beststring += str(objectsum)
+            countcnt = n
+            beststring += ' '
+            maxlistforgroup = list(maxlist)
+            beststring += str(number)
+            beststring += '.png'
+            cv2.imwrite(beststring, searchshow)
+        retrain()
+        torch.save(net222, 'net 200 reg shoe LB backup.pkl')
+        countmax = 0
+        cnt = cnt + 1
+        print('ok')
+
+    okk = 0
+
+    print('樟樹=', number)
+
+    ggg = ggg + 1
+    if ggg % 3 == 0:
+        if (combo == 5):
+            combo = 0
+
+        combo = min(combo + 1, 5)
+        searchgroup(0, combo, nowshape, maxlistforgroup, [], [0] * 300, 0, [[1000000]], [])
+
+        ni = nextgroup[combo][0][0]
+        nj = nextgroup[combo][0][1]
+
+        for i in prange(0, len(nextgroup[combo]), 1):
+            nextgroup[combo][i][0] -= ni
+            nextgroup[combo][i][1] -= nj
+        print(nextgroup)
