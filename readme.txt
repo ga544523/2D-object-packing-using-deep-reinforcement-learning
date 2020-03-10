@@ -1,4 +1,4 @@
-!!Warning!! useless project do not spend 5 minutes on this
+!!Warning!! useless project do not spend more than 5 minutes on this
 
 !!警告無任何研究意義!! 
 
