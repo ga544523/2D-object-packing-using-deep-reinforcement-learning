@@ -5,5 +5,4 @@
 基於強化學習的物件排版
 onlinge judge風格
 
-使用前請先安裝
-pytorch與opencv
+安裝完pytorch與opencv 程式碼複製貼上 即可運行
