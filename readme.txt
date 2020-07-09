@@ -6,3 +6,4 @@
 onlinge judge風格
 
 安裝完pytorch與opencv 程式碼複製貼上 即可運行
+![image]
