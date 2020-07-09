@@ -6,6 +6,10 @@
 onlinge judge風格
 
 安裝完pytorch與opencv 程式碼複製貼上 即可運行
+
+
+
+
 ![image](https://github.com/ga544523/2D-object-packing-using-deep-reinforcement-learning/blob/master/four44.png?raw=true)
 
 
